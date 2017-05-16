@@ -24,18 +24,32 @@
          var setSong = function(song) {
 
             if (currentBuzzObject) {
+                var continueMute = false;
+                if(currentBuzzObject.isMuted()){
+                  continueMute = true;
+                }
                 stopSong(song);
             }
 
             currentBuzzObject = new buzz.sound(song.audioUrl, {
                 formats: ['mp3'],
-                preload: true
+                preload: true,
+                volume: SongPlayer.volume
             });
+
+            if(continueMute){
+              currentBuzzObject.toggleMute();
+            }
 
             currentBuzzObject.bind('timeupdate', function() {
                 $rootScope.$apply(function() {
                     SongPlayer.currentTime = currentBuzzObject.getTime();
                 });
+
+                if (currentBuzzObject.isEnded()) {
+                    SongPlayer.next();
+                }
+
             });
             SongPlayer.currentSong = song;
          };
@@ -91,7 +105,14 @@
          * @desc Current player volume
          * @type {Number}
          */
-         SongPlayer.volume = null;
+         SongPlayer.volume = 80;
+
+
+         /**
+         * @desc Volume state of song: Muted/Unmuted
+         * @type {String}
+         */
+         SongPlayer.onMute = 'high';
 
 
          /**
@@ -101,6 +122,9 @@
          */
          SongPlayer.play = function(song) {
            song = song || SongPlayer.currentSong;
+
+           if(song === null && SongPlayer.currentSong === null) { return false; }
+
            if (SongPlayer.currentSong !== song) {
              setSong(song);
              playSong(song);
@@ -182,6 +206,20 @@
          SongPlayer.setVolume = function(value) {
            if (currentBuzzObject) {
                currentBuzzObject.setVolume(value);
+               SongPlayer.volume = value;
+           }
+         };
+
+
+         /**
+         * @function mute
+         * @desc Mutes/Unmutes volume
+         * @param {Object}
+         */
+         SongPlayer.mute = function() {
+           if(currentBuzzObject) {
+             SongPlayer.onMute === 'mute' ? SongPlayer.onMute = 'high' : SongPlayer.onMute = 'mute';
+             currentBuzzObject.toggleMute();
            }
          };
 
